@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Basko Clean — Profesjonalne czyszczenie B2B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+  * { box-sizing: border-box; }
+  html { margin: 0; scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background-image: url('../../assets/images/hala-bg.jpg');
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center center;
+    background-color: #1a2535;
+  }
+  #root { overflow-x: hidden; padding-bottom: 64px; }
+
+  /* Sekcje — semi-przezroczyste, obraz hali prześwituje */
+  .scheme-1 { background: rgba(255, 255, 255, 0.94) !important; }
+  .scheme-2 { background: rgba(14, 22, 42, 0.93) !important; }
+  .scheme-3 { background: rgba(20, 30, 55, 0.93) !important; }
+
+  /* Quote modal */
+  .bc-overlay { position: fixed; inset: 0; background: rgba(4,6,8,.55); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 24px; }
+  .bc-modal { background: #fff; border-radius: var(--radius-card); max-width: 460px; width: 100%; padding: 40px; }
+
+  /* Sticky bottom bar */
+  #bc-sticky-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: var(--cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 12px 5%;
+    transform: translateY(100%);
+    transition: transform 0.4s ease-out;
+  }
+  .bc-sticky-desc {
+    color: #fff;
+    font-weight: 700;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    letter-spacing: 0.04em;
+  }
+  .bc-sticky-phone {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.2rem;
+    font-family: var(--font-body);
+    text-decoration: none;
+  }
+  .bc-sticky-btn {
+    background: #fff;
+    color: #1b2a4a;
+    font-weight: 700;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    padding: 8px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+  .bc-sticky-btn:hover { opacity: 0.88; }
+  button.bc-sticky-btn { border: none; cursor: pointer; }
+
+  /* Scroll fade-in */
+  .bc-fade { opacity: 0; transform: translateY(24px); transition: opacity 0.5s ease-out, transform 0.5s ease-out; }
+  .bc-fade.bc-visible { opacity: 1; transform: translateY(0); }
+
+  /* Responsive */
+  .bc-burger { display: none !important; }
+  @media (max-width: 991px) {
+    .bc-desktop-nav { display: none !important; }
+    .bc-burger { display: flex !important; }
+    .bc-hero-grid, .bc-svc-grid, .bc-cta-grid, .bc-footer-card, .bc-ofirmie-grid, .bc-uslugi-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+    .bc-benefits-grid { grid-template-columns: repeat(2,1fr) !important; }
+    .bc-reviews-grid { grid-template-columns: 1fr !important; }
+    .bc-footer-cols { grid-template-columns: repeat(2,1fr) !important; }
+    .bc-footer-bottom { flex-direction: column !important; align-items: flex-start !important; gap: 20px; }
+    .bc-sticky-desc { display: none !important; }
+  }
+  @media (max-width: 560px) {
+    .bc-benefits-grid { grid-template-columns: 1fr !important; }
+  }
+
+  /* Visually hidden but accessible to screen readers */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Tytuł — statyczny gradient */
+  .bc-gradient-text {
+    background: linear-gradient(90deg, #0a0f1e 0%, #233562 40%, #4a6fa5 70%, #7b9fd4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: inline-block;
+  }
+  .bc-b2b {
+    color: #4a6fa5;
+  }
+
+  /* Przycisk wyceny — gradient + przesuwający się połysk */
+  .bc-quote-btn {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    margin-top: 4px;
+    background: linear-gradient(135deg, #2d4470 0%, #233562 55%, #18233f 100%) !important;
+    border: 1px solid rgba(255,255,255,0.14) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 6px 22px rgba(35,53,98,0.32), inset 0 1px 0 rgba(255,255,255,0.22);
+  }
+  .bc-quote-btn:hover {
+    box-shadow: 0 12px 34px rgba(35,53,98,0.5), inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .bc-quote-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -160%;
+    width: 55%;
+    height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,0.45), transparent);
+    transform: skewX(-22deg);
+    animation: bcShine 4.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .bc-quote-btn:hover::before { animation-duration: 1.3s; }
+  @keyframes bcShine {
+    0%   { left: -160%; }
+    16%  { left: 170%; }
+    100% { left: 170%; }
+  }
+
+  /* Service picker tiles (formularz wyceny w Hero) */
+  .bc-svc-caption {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--fg3);
+    font-weight: 600;
+  }
+  .bc-svc-tile {
+    position: relative;
+    padding: 14px 8px 11px;
+    border-radius: 12px;
+    border: 1.5px solid var(--black-15);
+    background: #fff;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color .25s, background .25s, transform .2s, box-shadow .25s;
+    outline: none;
+  }
+  .bc-svc-tile:hover {
+    border-color: rgba(35,53,98,0.4);
+    background: #f8fafc;
+    transform: translateY(-2px);
+  }
+  .bc-svc-tile:focus-visible {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px var(--cyan-light);
+  }
+  .bc-svc-tile.on {
+    border-color: var(--cyan);
+    background: var(--cyan-light);
+    box-shadow: 0 6px 18px rgba(35,53,98,0.15);
+  }
+  .bc-svc-dot {
+    position: absolute;
+    top: 7px; right: 7px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    opacity: 0;
+    transform: scale(0);
+    transition: opacity .2s, transform .25s cubic-bezier(.34,1.56,.64,1);
+  }
+  .bc-svc-tile.on .bc-svc-dot { opacity: 1; transform: scale(1); }
+  .bc-svc-tile svg {
+    width: 26px; height: 26px;
+    margin: 0 auto 8px;
+    display: block;
+  }
+  .bc-svc-tile svg * {
+    fill: none;
+    stroke: var(--fg3);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: stroke .25s;
+  }
+  .bc-svc-tile.on svg * { stroke: var(--cyan); }
+  .bc-svc-txt {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--fg2);
+    line-height: 1.3;
+    transition: color .25s;
+  }
+  .bc-svc-tile.on .bc-svc-txt { color: var(--cyan); }
+
+  /* Karta wyceny — efekt pływania + oddychająca poświata */
+  .bc-card-glow {
+    border-radius: 16px;
+    animation: bcCardFloat 6s ease-in-out infinite;
+  }
+  .bc-card-glow:hover { animation-play-state: paused; }
+  @keyframes bcCardFloat {
+    0%, 100% {
+      transform: translateY(0);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.16), 0 0 40px rgba(35,53,98,0.10);
+    }
+    50% {
+      transform: translateY(-8px);
+      box-shadow: 0 28px 70px rgba(0,0,0,0.20), 0 0 75px rgba(35,53,98,0.22);
+    }
+  }
+  .bc-card-inner {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+  }
+
+  /* Pasek zaufania pod formularzem */
+  .bc-trust-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--black-10);
+  }
+  .bc-trust-cell {
+    text-align: center;
+    padding: 0 4px;
+    border-right: 1px solid var(--black-10);
+  }
+  .bc-trust-cell:last-child { border-right: none; }
+  .bc-trust-val {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 1.15rem;
+    color: var(--cyan);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .bc-trust-lbl {
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg3);
+    margin-top: 6px;
+  }
+
+  /* FIX 7: Respect user's motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    .bc-fade { transition: none !important; }
+    #bc-sticky-bar { transition: none !important; }
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Sticky bottom bar -->
+<div id="bc-sticky-bar">
+  <span class="bc-sticky-desc">ZADZWOŃ PO BEZPŁATNĄ WYCENĘ</span>
+  <a href="tel:+48512937566" class="bc-sticky-phone">+48 512 937 566</a>
+  <button onclick="window.bcOpenQuote && window.bcOpenQuote()" class="bc-sticky-btn">Zamów wycenę ➤</button>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="ui.jsx"></script>
+<script type="text/babel" src="Navbar.jsx"></script>
+<script type="text/babel" src="Hero.jsx"></script>
+<script type="text/babel" src="TrustBar.jsx"></script>
+<script type="text/babel" src="OFirmie.jsx"></script>
+<script type="text/babel" src="Uslugi.jsx"></script>
+<script type="text/babel" src="Services.jsx"></script>
+<script type="text/babel" src="Benefits.jsx"></script>
+<script type="text/babel" src="ParallaxBanner.jsx"></script>
+<script type="text/babel" src="Testimonials.jsx"></script>
+<script type="text/babel" src="CTA.jsx"></script>
+<script type="text/babel" src="Footer.jsx"></script>
+
+<script type="text/babel">
+const { useState } = React;
+
+function QuoteModal({ onClose }) {
+  const [done, setDone] = useState(false);
+  return (
+    <div className="bc-overlay" onClick={onClose}>
+      <div className="bc-modal" onClick={(e) => e.stopPropagation()}>
+        {done ? (
+          <div style={{ textAlign: "center" }}>
+            <Icon name="check_circle" size={48} cyan style={{ margin: "0 auto 16px" }} />
+            <h3 style={{ fontWeight: 700, fontSize: "var(--h5)", margin: "0 0 8px" }}>Dziękujemy!</h3>
+            <p style={{ color: "var(--fg2)", margin: "0 0 24px" }}>Odezwiemy się z bezpłatną wyceną w ciągu 24 godzin.</p>
+            <Button onClick={onClose}>Zamknij</Button>
+          </div>
+        ) : (
+          <React.Fragment>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 8 }}>
+              <h3 style={{ fontWeight: 700, fontSize: "var(--h5)", margin: 0 }}>Bezpłatna wycena</h3>
+              <button onClick={onClose} aria-label="Zamknij" style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                <Icon name="close" size={22} />
+              </button>
+            </div>
+            <p style={{ color: "var(--fg2)", margin: "0 0 24px", fontSize: "var(--text-small)" }}>Otrzymasz dokładny kosztorys bez zobowiązań.</p>
+            <form onSubmit={(e) => { e.preventDefault(); setDone(true); }} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <label htmlFor="modal-firma" className="sr-only">Nazwa firmy</label>
+              <Input id="modal-firma" placeholder="Nazwa firmy" required />
+              <label htmlFor="modal-email" className="sr-only">Email kontaktowy</label>
+              <Input id="modal-email" type="email" placeholder="Email kontaktowy" required />
+              <label htmlFor="modal-usluga" className="sr-only">Wybierz usługę</label>
+              <select id="modal-usluga" required defaultValue="" style={{ fontFamily: "var(--font-body)", fontSize: "var(--text-regular)", border: "none", borderBottom: "1px solid var(--black-15)", background: "transparent", padding: "10px 0", outline: "none", color: "var(--fg1)" }}>
+                <option value="" disabled>Wybierz usługę</option>
+                <option>Posadzki betonowe</option>
+                <option>Hale i magazyny</option>
+                <option>Dachy i elewacje</option>
+                <option>Mieszkania deweloperskie</option>
+              </select>
+              <Button type="submit" style={{ marginTop: 8 }}>Wyślij zapytanie</Button>
+            </form>
+          </React.Fragment>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [quote, setQuote] = useState(false);
+  const open = () => setQuote(true);
+  window.bcOpenQuote = open;
+  return (
+    <React.Fragment>
+      <Navbar onQuote={open} />
+      <Hero onQuote={open} />
+      <TrustBar />
+      <OFirmie />
+      <Uslugi />
+      <Services />
+      <Benefits />
+      <ParallaxBanner onQuote={open} />
+      <Testimonials />
+      <CTA onQuote={open} />
+      <Footer />
+      {quote && <QuoteModal onClose={() => setQuote(false)} />}
+    </React.Fragment>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+<script>
+// Sticky bar slide-up after 1.5s
+setTimeout(function() {
+  var bar = document.getElementById('bc-sticky-bar');
+  if (bar) bar.style.transform = 'translateY(0)';
+}, 1500);
+
+// Scroll fade-in via IntersectionObserver
+setTimeout(function() {
+  var sections = document.querySelectorAll('section');
+  if (!sections.length) return;
+
+  sections.forEach(function(s, i) { if (i > 0) s.classList.add('bc-fade'); });
+
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('bc-visible');
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  sections.forEach(function(s) { obs.observe(s); });
+}, 300);
+</script>
+</body>
+</html>
