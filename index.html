@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Basko Clean — Profesjonalne czyszczenie B2B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+  * { box-sizing: border-box; }
+  html { margin: 0; scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    /* Ciemny granat jako baza całej strony. Wspólne paski/światło są na #root, a sekcje są przezroczyste — dzięki temu światło płynie między sekcjami bez „uciętych" linii na stykach. */
+    background-color: var(--navy-900);
+  }
+  #root {
+    /* overflow-x: clip (nie: hidden) — przycina poziome wystawanie chmur/bąbelków,
+       ale NIE tworzy kontenera przewijania, więc sticky navbar dalej jedzie ze scrollem. */
+    overflow-x: clip;
+    background-color: var(--navy-900);
+    /* JEDNO wspólne tło CAŁEJ strony — bez podziału na sekcje. Światło (poświaty) i paski są tutaj,
+       a wszystkie sekcje są przezroczyste i tylko układają treść na wierzchu. Dzięki temu nie ma
+       żadnych „przejść" ani uciętych linii — światło płynie nieprzerwanie od góry do dołu. */
+    background-image:
+      radial-gradient(70% 34% at 82% 12%, rgba(108,134,240,0.09) 0%, transparent 66%),
+      radial-gradient(72% 34% at 14% 45%, rgba(108,134,240,0.08) 0%, transparent 66%),
+      radial-gradient(72% 34% at 85% 82%, rgba(108,134,240,0.08) 0%, transparent 66%),
+      repeating-linear-gradient(90deg, rgba(170,190,255,0.12) 0px, rgba(170,190,255,0.12) 1px, transparent 1px, transparent 58px);
+  }
+
+  /* Widoczny pierścień fokusa dla klawiatury (WCAG 2.4.7). Pokazywany tylko przy
+     nawigacji klawiaturą (:focus-visible); klik myszką nie pokazuje obwódki. */
+  :focus-visible {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+  :focus:not(:focus-visible) { outline: none; }
+
+  /* Sekcje — semi-przezroczyste, obraz hali prześwituje */
+  .scheme-1 { background: rgba(255, 255, 255, 0.94) !important; }
+  .scheme-2 { background: rgba(14, 22, 42, 0.93) !important; }
+  .scheme-3 { background: rgba(20, 30, 55, 0.93) !important; }
+
+  /* Quote modal */
+  .bc-overlay { position: fixed; inset: 0; background: rgba(4,6,8,.55); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 24px; }
+  .bc-modal { background: #fff; border-radius: var(--radius-card); max-width: 460px; width: 100%; padding: 40px; }
+
+  /* Scroll fade-in */
+  .bc-fade { opacity: 0; transform: translateY(24px); transition: opacity 0.5s ease-out, transform 0.5s ease-out; }
+  .bc-fade.bc-visible { opacity: 1; transform: translateY(0); }
+
+  /* Responsive */
+  .bc-burger { display: none !important; }
+  @media (max-width: 991px) {
+    .bc-desktop-nav { display: none !important; }
+    .bc-burger { display: flex !important; }
+    .bc-hero-grid, .bc-svc-grid, .bc-cta-grid, .bc-footer-card, .bc-ofirmie-grid, .bc-uslugi-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+    .bc-benefits-grid { grid-template-columns: repeat(2,1fr) !important; }
+    .bc-reviews-grid { grid-template-columns: 1fr !important; }
+    .bc-footer-cols { grid-template-columns: repeat(2,1fr) !important; }
+    .bc-footer-bottom { flex-direction: column !important; align-items: flex-start !important; gap: 20px; }
+    .bc-sticky-desc { display: none !important; }
+    .bc-hero-side { display: none !important; }
+  }
+  @media (max-width: 560px) {
+    .bc-benefits-grid { grid-template-columns: 1fr !important; }
+  }
+  /* Pływające kafelki Hero (absolutne) nachodzą na kartę wyceny w oknie ~992–1180px — chowamy wcześniej. */
+  @media (max-width: 1180px) {
+    .bc-hero-side { display: none !important; }
+  }
+  @media (max-width: 700px) {
+    .bc-expand-row { flex-direction: column !important; height: auto !important; gap: 10px !important; }
+    .bc-expand-row > * { flex: 1 1 auto !important; min-height: 150px; }
+  }
+
+  /* Visually hidden but accessible to screen readers */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Tytuł — statyczny gradient */
+  .bc-gradient-text {
+    background: linear-gradient(90deg, #0a0f1e 0%, #233562 40%, #4a6fa5 70%, #7b9fd4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: inline-block;
+  }
+  .bc-b2b {
+    color: #4a6fa5;
+  }
+
+  /* Ozdobny napis tła (watermark) — domyślny rozmiar desktop. Na mobile mocno zmniejszony,
+     by nie wychodził na treść / nie nachodził na nagłówki (sekcje i tak mają overflow:hidden). */
+  .bc-watermark { font-size: clamp(5.5rem, 15vw, 13rem); }
+  @media (max-width: 991px) {
+    .bc-watermark { font-size: clamp(2.4rem, 11vw, 4rem) !important; }
+  }
+
+  /* Przycisk wyceny — gradientowe tło (połysk dokłada .bc-btn-shine) */
+  .bc-quote-btn {
+    width: 100%;
+    margin-top: 4px;
+    background: linear-gradient(135deg, #2d4470 0%, #233562 55%, #18233f 100%) !important;
+    border: 1px solid rgba(255,255,255,0.14) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 6px 22px rgba(35,53,98,0.32), inset 0 1px 0 rgba(255,255,255,0.22);
+  }
+  .bc-quote-btn:hover {
+    box-shadow: 0 12px 34px rgba(35,53,98,0.5), inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+
+  /* Przechodzący połysk — na wszystkich przyciskach CTA */
+  .bc-btn-shine { position: relative; overflow: hidden; }
+  .bc-btn-shine::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -160%;
+    width: 55%; height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,0.45), transparent);
+    transform: skewX(-22deg);
+    animation: bcShine 4.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .bc-btn-shine:hover::before { animation-duration: 3.5s; }
+  /* na jasnych przyciskach (onDark = białe tło) — ciemniejszy błysk */
+  .bc-btn-shine-dark::before {
+    background: linear-gradient(100deg, transparent, rgba(27,42,74,0.28), transparent);
+  }
+  @keyframes bcShine {
+    0%   { left: -160%; }
+    16%  { left: 170%; }
+    100% { left: 170%; }
+  }
+
+  /* Tekst z przepływającym gradientem (jak webuild.io) — w barwach Basko Clean */
+  @keyframes bcTextFlow { to { background-position: 200% center; } }
+  .bc-flow-text {
+    background: linear-gradient(90deg, #4a6fa5, #8fa8ff, #cdd9ff, #8fa8ff, #4a6fa5);
+    background-size: 200% auto;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+    animation: bcTextFlow 4s linear infinite;
+    /* Wspólny lekki glow (jak na słowie „czysta") dla WSZYSTKICH tekstów z płynącym gradientem */
+    filter: drop-shadow(0 0 14px rgba(143,168,255,0.6)) drop-shadow(0 0 28px rgba(143,168,255,0.35));
+  }
+  .bc-flow-text-dark {
+    background: linear-gradient(90deg, #1b2a4a, #3b5bdb, #6c86f0, #3b5bdb, #1b2a4a);
+    background-size: 200% auto;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+    animation: bcTextFlow 4.5s linear infinite;
+  }
+  /* Wspólny badge CTA → formularz wyceny (cyjan jak strona „Wycena", pulsująca poświata) */
+  .bc-cta-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; flex-shrink: 0;
+    background: radial-gradient(circle at 32% 28%, #7fe8ff 0%, #00c9f5 56%, #00a3cc 100%);
+    border: 2px solid rgba(190,247,255,0.9);
+    animation: bcCtaPulse 2.6s ease-in-out infinite;
+  }
+  @keyframes bcCtaPulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(0,201,245,0.14), 0 8px 18px rgba(0,201,245,0.36), 0 0 16px rgba(0,201,245,0.45); }
+    50%      { box-shadow: 0 0 0 7px rgba(0,201,245,0.22), 0 10px 24px rgba(0,201,245,0.50), 0 0 30px rgba(0,201,245,0.78); }
+  }
+  /* Ikona wypełniona płynącym gradientem (maska na kształt ikony) */
+  .bc-flow-icon {
+    width: 26px;
+    height: 26px;
+    background: linear-gradient(120deg, #233562, #4a6fa5, #8fa8ff, #4a6fa5, #233562);
+    background-size: 220% auto;
+    animation: bcTextFlow 4s linear infinite;
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    -webkit-mask-position: center; mask-position: center;
+    -webkit-mask-size: contain; mask-size: contain;
+  }
+
+  /* Service picker tiles (formularz wyceny w Hero) */
+  .bc-svc-caption {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--fg3);
+    font-weight: 600;
+  }
+  .bc-svc-tile {
+    position: relative;
+    padding: 14px 8px 11px;
+    border-radius: 12px;
+    border: 1.5px solid var(--black-15);
+    background: #fff;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color .25s, background .25s, transform .2s, box-shadow .25s;
+  }
+  .bc-svc-tile:hover {
+    border-color: rgba(35,53,98,0.4);
+    background: #f8fafc;
+    transform: translateY(-2px);
+  }
+  .bc-svc-tile:focus-visible {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px var(--cyan-light);
+  }
+  .bc-svc-tile.on {
+    border-color: var(--cyan);
+    background: var(--cyan-light);
+    box-shadow: 0 6px 18px rgba(35,53,98,0.15);
+  }
+  .bc-svc-dot {
+    position: absolute;
+    top: 7px; right: 7px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    opacity: 0;
+    transform: scale(0);
+    transition: opacity .2s, transform .25s cubic-bezier(.34,1.56,.64,1);
+  }
+  .bc-svc-tile.on .bc-svc-dot { opacity: 1; transform: scale(1); }
+  .bc-svc-tile svg {
+    width: 26px; height: 26px;
+    margin: 0 auto 8px;
+    display: block;
+  }
+  .bc-svc-tile svg * {
+    fill: none;
+    stroke: var(--fg3);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: stroke .25s;
+  }
+  .bc-svc-tile.on svg * { stroke: var(--cyan); }
+  .bc-svc-txt {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--fg2);
+    line-height: 1.3;
+    transition: color .25s;
+  }
+  .bc-svc-tile.on .bc-svc-txt { color: var(--cyan); }
+
+  /* Karta wyceny — pływanie + płynący gradientowy border + szklane, podświetlone tło */
+  .bc-card-glow {
+    border-radius: 16px;
+    padding: 2px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.22), 0 0 60px rgba(143,168,255,0.22);
+    will-change: transform;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    animation: bcCardFloat 6s ease-in-out infinite;
+  }
+  .bc-card-glow:hover { animation-play-state: paused; }
+  @keyframes bcCardFloat {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50%      { transform: translate3d(0, -8px, 0); }
+  }
+  .bc-card-inner {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 32px;
+    text-align: center;
+  }
+
+  /* Pasek zaufania pod formularzem */
+  .bc-trust-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--black-10);
+  }
+  .bc-trust-cell {
+    text-align: center;
+    padding: 0 4px;
+    border-right: 1px solid var(--black-10);
+  }
+  .bc-trust-cell:last-child { border-right: none; }
+  .bc-trust-val {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 1.15rem;
+    color: var(--cyan);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .bc-trust-lbl {
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg3);
+    margin-top: 6px;
+  }
+
+  /* Sekcja O nas — interaktywne szklane karty */
+  .bc-about-card {
+    /* Mocno „szklane" (frosted): silny blur + bardzo niskie krycie tła + delikatna poświata akcentu.
+       Tekst pozostaje czytelny dzięki jasnemu kolorowi na ciemnym, rozmytym tle. */
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(143,168,255,0.22);
+    border-radius: 16px;
+    padding: 22px;
+    backdrop-filter: blur(22px) saturate(130%);
+    -webkit-backdrop-filter: blur(22px) saturate(130%);
+    box-shadow: 0 12px 36px rgba(5,10,40,0.30), 0 0 30px rgba(143,168,255,0.18);
+    transition: transform .3s ease, background .3s ease, border-color .3s ease, box-shadow .3s ease;
+  }
+  .bc-about-card:hover {
+    transform: translateY(-5px);
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(143,168,255,0.6);
+    box-shadow: 0 20px 44px rgba(5,10,40,0.5), 0 0 40px rgba(143,168,255,0.3);
+  }
+  .bc-about-ico {
+    width: 44px; height: 44px; border-radius: 11px;
+    background: rgba(143,168,255,0.16);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 14px;
+    transition: background .3s ease, transform .3s ease;
+  }
+  .bc-about-card:hover .bc-about-ico {
+    background: rgba(143,168,255,0.32);
+    transform: scale(1.06);
+  }
+
+  /* Miniatury karuzeli before/after */
+  .bc-thumb {
+    transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease, opacity .25s ease;
+  }
+  .bc-thumb:hover { transform: translateY(-3px); }
+
+  /* Połysk „wyczyszczonej szyby" — statyczny refleks na kafelkach */
+  .bc-glass-shine { position: relative; }
+  .bc-glass-shine::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(125deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 20%, rgba(255,255,255,0) 42%);
+  }
+  .bc-about-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(125deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 20%, rgba(255,255,255,0) 42%);
+  }
+
+  /* Deszcz baniek — bąbelki opadają w dół i delikatnie znikają na krańcach (płynna pętla) */
+  @keyframes bcBubbleRain {
+    0%   { transform: translateY(-12vh); opacity: 0; }
+    12%  { opacity: var(--bub-o, 0.4); }
+    86%  { opacity: var(--bub-o, 0.4); }
+    100% { transform: translateY(82vh); opacity: 0; }
+  }
+
+  /* Bąbelki — stabilne, potem nagle PĘKAJĄ i odbudowują się (jak bańki mydlane) */
+  @keyframes bcBubblePop {
+    0%   { transform: scale(1);    opacity: var(--bub-o, 0.5); }
+    80%  { transform: scale(1);    opacity: var(--bub-o, 0.5); }
+    87%  { transform: scale(1.16); opacity: var(--bub-o, 0.5); }  /* napina się */
+    92%  { transform: scale(1.55); opacity: 0; }                  /* PYK — strzela */
+    93%  { transform: scale(0.15); opacity: 0; }                  /* zniknął */
+    100% { transform: scale(1);    opacity: var(--bub-o, 0.5); }  /* odbudowa */
+  }
+
+  /* Płynący gradientowy border (jak webuild.io) — w barwach Basko */
+  @keyframes bcBorderFlow { to { background-position: 300% 50%; } }
+  @keyframes bcGalFade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes bcGalPop { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+  .bc-flow-border { position: relative; }
+  .bc-flow-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: linear-gradient(120deg, #233562, #4a6fa5, #8fa8ff, #cdd9ff, #8fa8ff, #4a6fa5, #233562);
+    background-size: 300% 300%;
+    animation: bcBorderFlow 7s linear infinite;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Pulsujący pierścień wokół medalionów z logo (TrustBar) — zachęca do kliknięcia */
+  @keyframes bcPulseRing {
+    0%   { transform: scale(1);    opacity: 0.65; }
+    70%  { transform: scale(1.85); opacity: 0; }
+    100% { transform: scale(1.85); opacity: 0; }
+  }
+
+  /* === FINAŁ STRONY (Podsumowanie + drugi CTA + stopka) === */
+
+  /* Interaktywne bąbelki — reagują na kursor: napinają się i podświetlają (jak przed pęknięciem) */
+  .bc-ibubble { pointer-events: auto; cursor: pointer; }
+  .bc-ib-core {
+    display: block;
+    transform-origin: center;
+    transition: transform .35s cubic-bezier(.34,1.56,.64,1), filter .35s ease;
+  }
+  .bc-ibubble:hover { z-index: 6; }
+  .bc-ibubble:hover .bc-ib-core {
+    transform: scale(1.75);
+    filter: drop-shadow(0 0 10px var(--ib-glow, var(--accent-blue))) brightness(1.45);
+  }
+
+  /* Kafelek-filar w podsumowaniu — szklany, podświetla się na hover */
+  .bc-sum-tile {
+    position: relative;
+    padding: 26px 24px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.05);
+    box-shadow: 0 10px 30px rgba(5,10,40,0.32);
+    transition: transform .3s ease, background .3s ease, box-shadow .3s ease;
+  }
+  .bc-sum-tile:hover {
+    transform: translateY(-6px);
+    background: linear-gradient(100deg, rgba(143,168,255,0.16), rgba(143,168,255,0.03) 70%);
+    box-shadow: 0 22px 50px rgba(5,10,40,0.5), 0 0 36px rgba(143,168,255,0.22);
+  }
+
+  /* Linki w stopce */
+  .bc-foot-link { transition: color .2s ease; }
+  .bc-foot-link:hover { color: #fff; }
+
+  @media (max-width: 991px) {
+    .bc-sum-grid   { grid-template-columns: repeat(2,1fr) !important; }
+    .bc-sum-stats  { grid-template-columns: repeat(2,1fr) !important; }
+    .bc-final-cta-inner { padding: 44px 26px !important; }
+  }
+  @media (max-width: 560px) {
+    .bc-sum-grid    { grid-template-columns: 1fr !important; }
+    .bc-foot-bar    { flex-direction: column; align-items: flex-start !important; }
+    .bc-foot-bottom { flex-direction: column; align-items: flex-start !important; }
+  }
+
+  /* FIX 7: Respect user's motion preferences.
+     WAŻNE: animation-iteration-count:1 jest kluczowe — bez tego animacje
+     `infinite` skrócone do 0.01ms zapętlają się tysiące razy/s i komponent
+     zaczyna gwałtownie wibrować zamiast się zatrzymać. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      animation-play-state: paused !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    .bc-fade { transition: none !important; }
+    #bc-sticky-bar { transition: none !important; }
+    /* karta wyceny: stoi nieruchomo zamiast pływać */
+    .bc-card-glow { animation: none !important; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="ui.jsx"></script>
+<script type="text/babel" src="Navbar.jsx"></script>
+<script type="text/babel" src="Hero.jsx"></script>
+<script type="text/babel" src="Oferta.jsx"></script>
+<script type="text/babel" src="TrustBar.jsx"></script>
+<script type="text/babel" src="OFirmie.jsx"></script>
+<script type="text/babel" src="Galeria.jsx"></script>
+<script type="text/babel" src="HowItWorks.jsx"></script>
+<script type="text/babel" src="CTA.jsx"></script>
+<script type="text/babel" src="Footer.jsx"></script>
+
+<script type="text/babel">
+const { useState } = React;
+
+function QuoteModal({ onClose }) {
+  const { t } = useLang();
+  const [done, setDone] = useState(false);
+  return (
+    <div className="bc-overlay" onClick={onClose}>
+      <div className="bc-modal" role="dialog" aria-modal="true" aria-label={t("Bezpłatna wycena", "Free quote")} onClick={(e) => e.stopPropagation()}>
+        {done ? (
+          <div style={{ textAlign: "center" }}>
+            <Icon name="check_circle" size={48} cyan style={{ margin: "0 auto 16px" }} />
+            <h3 style={{ fontWeight: 700, fontSize: "var(--h5)", margin: "0 0 8px" }}>{t("Dziękujemy!", "Thank you!")}</h3>
+            <p style={{ color: "var(--fg2)", margin: "0 0 24px" }}>{t("Odezwiemy się z bezpłatną wyceną w ciągu 24 godzin.", "We'll get back to you with a free quote within 24 hours.")}</p>
+            <Button onClick={onClose}>{t("Zamknij", "Close")}</Button>
+          </div>
+        ) : (
+          <React.Fragment>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 8 }}>
+              <h3 style={{ fontWeight: 700, fontSize: "var(--h5)", margin: 0 }}>{t("Bezpłatna wycena", "Free quote")}</h3>
+              <button onClick={onClose} aria-label={t("Zamknij", "Close")} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                <Icon name="close" size={22} />
+              </button>
+            </div>
+            <p style={{ color: "var(--fg2)", margin: "0 0 24px", fontSize: "var(--text-small)" }}>{t("Otrzymasz dokładny kosztorys bez zobowiązań.", "You'll get a precise estimate with no obligations.")}</p>
+            <form onSubmit={(e) => { e.preventDefault(); setDone(true); }} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <label htmlFor="modal-firma" className="sr-only">{t("Nazwa firmy", "Company name")}</label>
+              <Input id="modal-firma" autoComplete="organization" placeholder={t("Nazwa firmy", "Company name")} required />
+              <label htmlFor="modal-email" className="sr-only">{t("Email kontaktowy", "Contact email")}</label>
+              <Input id="modal-email" type="email" autoComplete="email" placeholder={t("Email kontaktowy", "Contact email")} required />
+              <label htmlFor="modal-usluga" className="sr-only">{t("Wybierz usługę", "Choose a service")}</label>
+              <select id="modal-usluga" required defaultValue="" style={{ fontFamily: "var(--font-body)", fontSize: "var(--text-regular)", border: "none", borderBottom: "1px solid var(--black-15)", background: "transparent", padding: "10px 0", color: "var(--fg1)" }}>
+                <option value="" disabled>{t("Wybierz usługę", "Choose a service")}</option>
+                <option>{t("Posadzki betonowe", "Concrete floors")}</option>
+                <option>{t("Hale i magazyny", "Halls & warehouses")}</option>
+                <option>{t("Dachy i elewacje", "Roofs & façades")}</option>
+                <option>{t("Mieszkania deweloperskie", "Developer apartments")}</option>
+              </select>
+              <Button type="submit" style={{ marginTop: 8 }}>{t("Wyślij zapytanie", "Send request")}</Button>
+            </form>
+          </React.Fragment>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   FINAŁ STRONY — Podsumowanie + drugi CTA + stopka
+   Wszystko inline w index.html (komponenty .jsx zostają nietknięte).
+   Korzysta z globalnych: makeBubbles, Foam, Button, Input (indirect eval).
+   ============================================================ */
+const FINAL_ACCENT = BC_ACCENT;
+
+// Mała bąbelkowa chmurka — dekoracyjny akcent (przezroczysty PNG), delikatnie pływa.
+// Pozycję/rozmiar/opacity podajesz w `style`. Globalna, więc używają jej też Hero/TrustBar.
+function Cloud({ src, style }) {
+  return (
+    <img src={src} alt="" aria-hidden="true"
+      style={{
+        position: "absolute", height: "auto", zIndex: 1, pointerEvents: "none", userSelect: "none",
+        animation: "bcCardFloat 9s ease-in-out infinite", willChange: "transform",
+        ...style,
+      }} />
+  );
+}
+
+// Bańka reagująca na kursor — opada (rain) + napina/podświetla się na hover
+function InteractiveBubble({ b, accent }) {
+  return (
+    <span
+      className="bc-ibubble"
+      style={{
+        position: "absolute", left: b.x + "%", top: b.y + "%",
+        ["--bub-o"]: b.o, ["--ib-glow"]: accent,
+        willChange: "transform, opacity",
+        animation: `bcBubbleRain ${b.fall}s linear infinite`, animationDelay: b.delay + "s",
+      }}
+    >
+      <span className="bc-ib-core">
+        <svg width={b.s} height={b.s} viewBox="0 0 24 24" style={{ display: "block" }}>
+          <circle cx="12" cy="12" r="11" fill={accent} opacity="0.07" />
+          <circle cx="12" cy="12" r="9" fill={accent} opacity="0.13" />
+          <circle cx="12" cy="12" r="9" fill="none" stroke={accent} strokeWidth="1.2" opacity="0.5" />
+          <circle cx="8.4" cy="8.4" r="2.1" fill="#ffffff" opacity="0.6" />
+        </svg>
+      </span>
+    </span>
+  );
+}
+
+// Pigułka-nagłówek (jak w pozostałych sekcjach)
+function SectionBadge({ children }) {
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 9, padding: "7px 18px", borderRadius: 100,
+      background: "rgba(255,255,255,0.09)", border: "1px solid rgba(255,255,255,0.22)",
+      color: "rgba(255,255,255,0.92)", fontSize: "0.72rem", fontWeight: 700,
+      letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 22,
+    }}>
+      <span style={{ width: 7, height: 7, borderRadius: "50%", background: FINAL_ACCENT, boxShadow: `0 0 10px ${FINAL_ACCENT}` }} />
+      {children}
+    </span>
+  );
+}
+
+// ── Pas przejściowy Hero → sekcja z logami: zapowiedź „Poznaj naszych klientów" ──
+// Gładki gradient (granat → światło → granat) + bąbelki piany. Fade-in/slide-up dziedziczy
+// z globalnego IntersectionObservera (każda <section> dostaje .bc-fade poza pierwszą).
+function KlienciIntro() {
+  const { t } = useLang();
+  return (
+    <section id="klienci" style={{ position: "relative", scrollMarginTop: 80, padding: "clamp(20px,3vw,48px) 5% clamp(56px,8vw,112px)", background: "transparent", overflow: "hidden", textAlign: "center" }}>
+      <div aria-hidden="true" style={{
+        position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none",
+        background:
+          "radial-gradient(58% 80% at 50% 50%, rgba(143,168,255,0.11) 0%, transparent 70%)," +
+          "linear-gradient(180deg, rgba(11,17,56,0) 0%, rgba(20,30,72,0.4) 50%, rgba(11,17,56,0) 100%)",
+      }} />
+      <div aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
+        {makeBubbles(12).map((b, i) => <InteractiveBubble key={i} b={b} accent={FINAL_ACCENT} />)}
+      </div>
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 760, margin: "0 auto" }}>
+        <div style={{ position: "relative", display: "inline-block", maxWidth: "100%" }}>
+          <SectionWatermark text="Klienci" />
+          <h2 className="display-bold" style={{ position: "relative", zIndex: 1, fontWeight: 800, color: "#fff", margin: 0, lineHeight: 1.06, letterSpacing: "-0.01em" }}>
+            {t("Poznaj naszych", "Meet our")} <span className="bc-flow-text">{t("klientów", "clients")}</span>
+          </h2>
+        </div>
+        <p style={{ marginTop: 16, fontSize: "var(--text-medium)", color: "rgba(255,255,255,0.8)", lineHeight: 1.6 }}>
+          {t("Każde zlecenie — od posadzki po dach — realizujemy na ", "Every job — from floor to roof — we deliver to the ")}<span className="bc-flow-text">{t("najwyższym poziomie", "highest standard")}</span>.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+const SUM_PILLARS = [
+  {
+    t: "Certyfikowana chemia", tEn: "Certified chemicals",
+    d: "Środki Ecolab, Kleen i Buzil — skuteczne, a bezpieczne dla powierzchni i ludzi.",
+    dEn: "Ecolab, Kleen and Buzil products — effective yet safe for surfaces and people.",
+    paths: <path d="M12 3C12 3 6 10 6 14.5A6 6 0 0 0 18 14.5C18 10 12 3 12 3Z" />,
+  },
+  {
+    t: "Wycena w 24 godziny", tEn: "Quote within 24 hours",
+    d: "Dokładny kosztorys bez zobowiązań — zawsze w dobę od zapytania.",
+    dEn: "A precise, no-obligation estimate — always within a day of your enquiry.",
+    paths: <React.Fragment><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 1.8" /></React.Fragment>,
+  },
+  {
+    t: "Pełna obsługa B2B", tEn: "Full B2B service",
+    d: "Kontrakty długoterminowe, praca nocą i w weekendy — bez przestojów w produkcji.",
+    dEn: "Long-term contracts, night and weekend work — no production downtime.",
+    paths: <React.Fragment><path d="M3 21V8.5L12 3l9 5.5V21" /><path d="M9 21v-6h6v6" /></React.Fragment>,
+  },
+  {
+    t: "10+ lat na rynku", tEn: "10+ years in business",
+    d: "Ponad 500 zrealizowanych zleceń w całej Polsce.",
+    dEn: "Over 500 completed jobs across Poland.",
+    paths: <path d="M12 2.5l2.5 6.9H21l-5.4 4.2 2.1 6.9L12 16.6l-5.7 3.9 2.1-6.9L3 9.4h6.5z" />,
+  },
+];
+
+const SUM_STATS = [
+  { v: "24h", vEn: "24h", l: "Czas wyceny", lEn: "Quote time" },
+  { v: "500+", vEn: "500+", l: "Zleceń B2B", lEn: "B2B jobs" },
+  { v: "10+ lat", vEn: "10+ yrs", l: "Doświadczenie", lEn: "Experience" },
+  { v: "Cała PL", vEn: "All PL", l: "Zasięg działania", lEn: "Coverage" },
+];
+
+function SumPillar({ item }) {
+  const { t } = useLang();
+  return (
+    <div className="bc-sum-tile bc-glass-shine bc-flow-border">
+      <div style={{
+        width: 48, height: 48, borderRadius: 13, marginBottom: 16,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background: "rgba(143,168,255,0.16)",
+      }}>
+        <svg viewBox="0 0 24 24" width="24" height="24"
+          style={{ stroke: FINAL_ACCENT, fill: "none", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" }}>
+          {item.paths}
+        </svg>
+      </div>
+      <h4 style={{ fontWeight: 700, fontSize: "var(--text-regular)", margin: "0 0 7px", color: "#fff" }}>{t(item.t, item.tEn)}</h4>
+      <p style={{ margin: 0, fontSize: "var(--text-small)", color: "rgba(255,255,255,0.66)", lineHeight: 1.55 }}>{t(item.d, item.dEn)}</p>
+    </div>
+  );
+}
+
+// ── A. Podsumowanie ────────────────────────────────────────
+function Podsumowanie() {
+  const { t } = useLang();
+  return (
+    <section id="podsumowanie" style={{ padding: "var(--section-pad-y) 5%", background: "transparent", position: "relative", overflow: "hidden" }}>
+      <div aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
+        {makeBubbles(16).map((b, i) => <InteractiveBubble key={i} b={b} accent={FINAL_ACCENT} />)}
+      </div>
+      {/* Chmura znad tytułu usunięta (czytelność nagłówka „Wszystko, co zyskujesz…"); reszta zostaje. */}
+      <Cloud src="../../assets/images/chmury/CHMURA-1.png" style={{ bottom: "0%", left: "-4%", width: 460, opacity: 0.78, zIndex: 0, animationDelay: "-6s" }} />
+      <Cloud src="../../assets/images/chmury/CHMURA-3.png" style={{ top: "44%", left: "4%", width: 240, opacity: 0.36, zIndex: 0, animationDelay: "-4s" }} />
+      <Cloud src="../../assets/images/chmury/CHMURA-4.png" style={{ bottom: "30%", right: "6%", width: 220, opacity: 0.34, zIndex: 0, animationDelay: "-9s" }} />
+
+      <div style={{ maxWidth: "var(--container-max)", margin: "0 auto", position: "relative", zIndex: 1 }}>
+        <div style={{ textAlign: "center", maxWidth: 640, margin: "0 auto 56px" }}>
+          <div style={{ position: "relative", display: "inline-block", maxWidth: "100%" }}>
+            <SectionWatermark text="Korzyści" />
+            <h2 className="display-bold" style={{ position: "relative", zIndex: 1, fontWeight: 800, color: "#fff", margin: "0 0 16px", lineHeight: 1.08 }}>
+              {t("Wszystko, co zyskujesz z ", "Everything you gain with ")}<span className="bc-flow-text">Basko&nbsp;Clean</span>
+            </h2>
+          </div>
+          <p style={{ fontSize: "var(--text-medium)", color: "rgba(255,255,255,0.78)", margin: 0 }}>
+            {t(
+              "Jedna ekipa, pełna obsługa czystości przemysłowej — od posadzek po elewacje, zawsze z tym samym, najwyższym standardem.",
+              "One team, full-service industrial cleaning — from floors to façades, always to the same, highest standard."
+            )}
+          </p>
+        </div>
+
+        <div className="bc-sum-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20, marginBottom: 28 }}>
+          {SUM_PILLARS.map((p) => <SumPillar key={p.t} item={p} />)}
+        </div>
+
+        <div className="bc-sum-stats bc-flow-border" style={{
+          display: "grid", gridTemplateColumns: "repeat(4,1fr)",
+          borderRadius: 18, padding: "26px 8px", background: "rgba(20,30,72,0.5)",
+          boxShadow: "0 16px 40px rgba(5,10,40,0.4)",
+        }}>
+          {SUM_STATS.map((s, i) => (
+            <div key={s.l} style={{
+              textAlign: "center", padding: "6px 12px",
+              borderRight: i < SUM_STATS.length - 1 ? "1px solid rgba(255,255,255,0.12)" : "none",
+            }}>
+              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: "2rem", color: FINAL_ACCENT, lineHeight: 1, letterSpacing: "-0.02em" }}>{t(s.v, s.vEn)}</div>
+              <div style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.6)", marginTop: 8 }}>{t(s.l, s.lEn)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── B. Drugi CTA ───────────────────────────────────────────
+function DrugiCTA({ onQuote }) {
+  const [phoneHover, setPhoneHover] = useState(false);
+  return (
+    <section style={{ padding: "0 5% var(--section-pad-y)", background: "transparent", position: "relative", overflow: "hidden" }}>
+      <div aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
+        {makeBubbles(12).map((b, i) => <InteractiveBubble key={i} b={b} accent={FINAL_ACCENT} />)}
+      </div>
+
+      <div style={{ maxWidth: "var(--container-max)", margin: "0 auto", position: "relative", zIndex: 1 }}>
+        <div className="bc-flow-border" style={{
+          position: "relative", borderRadius: 26, overflow: "hidden",
+          background: "radial-gradient(120% 140% at 50% -20%, rgba(143,168,255,0.22) 0%, transparent 55%), linear-gradient(150deg, #1b2c78 0%, #131e5a 55%, var(--navy-900) 100%)",
+          boxShadow: "0 30px 80px rgba(5,10,40,0.55), 0 0 70px rgba(143,168,255,0.18)",
+        }}>
+          <div className="bc-final-cta-inner" style={{ position: "relative", padding: "64px 56px", textAlign: "center" }}>
+            <SectionBadge>Zaczynamy?</SectionBadge>
+            <h2 className="display-bold" style={{ fontWeight: 800, color: "#fff", margin: "0 auto 18px", lineHeight: 1.08, maxWidth: 720 }}>
+              Gotowy na czystość <span className="bc-flow-text">bez kompromisów?</span>
+            </h2>
+            <p style={{ fontSize: "var(--text-medium)", color: "rgba(255,255,255,0.8)", margin: "0 auto 36px", maxWidth: 560, lineHeight: 1.6 }}>
+              Wyślij zapytanie, a w ciągu 24 godzin otrzymasz bezpłatny kosztorys.
+              Bez zobowiązań i bez ukrytych kosztów.
+            </p>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "center", marginBottom: 30 }}>
+              <Button onDark onClick={onQuote} style={{ padding: "14px 28px" }}>Zamów bezpłatną wycenę</Button>
+              <a
+                href="tel:+48512937566"
+                onMouseEnter={() => setPhoneHover(true)}
+                onMouseLeave={() => setPhoneHover(false)}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 9,
+                  fontFamily: "var(--font-body)", fontWeight: 600, fontSize: "var(--text-regular)",
+                  color: "#fff", textDecoration: "none", padding: "14px 26px", borderRadius: 8,
+                  border: "1px solid rgba(255,255,255,0.28)",
+                  background: phoneHover ? "rgba(255,255,255,0.1)" : "transparent",
+                  transition: "all .2s ease", whiteSpace: "nowrap",
+                }}
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                  style={{ stroke: FINAL_ACCENT, strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" }}>
+                  <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.5 2.1L8 9.6a16 16 0 0 0 6 6l1.1-1.1a2 2 0 0 1 2.1-.5c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.7 2z" />
+                </svg>
+                +48 512 937 566
+              </a>
+            </div>
+
+            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "10px 26px" }}>
+              {["Bez zobowiązań", "Kosztorys w 24h", "Certyfikowana chemia"].map((t) => (
+                <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: "var(--text-small)", color: "rgba(255,255,255,0.72)" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    style={{ stroke: FINAL_ACCENT, strokeWidth: 2.2, strokeLinecap: "round", strokeLinejoin: "round" }}>
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── C. Finał z rakietą: nagłówek + rakieta (screen-blend) + CTA-box przy ogonie + minimalna stopka ──
+function RocketFinal({ onQuote }) {
+  const { t } = useLang();
+  const [ctaHover, setCtaHover] = useState(false);
+  const [ctaBtnHover, setCtaBtnHover] = useState(false);
+  const isMobile = useIsMobile();
+
+  const bgImage =
+    "radial-gradient(70% 42% at 80% 16%, rgba(125,155,255,0.18) 0%, transparent 60%)," +
+    "radial-gradient(70% 42% at 16% 58%, rgba(125,155,255,0.15) 0%, transparent 62%)," +
+    "radial-gradient(82% 52% at 50% 96%, rgba(125,155,255,0.13) 0%, transparent 60%)," +
+    "repeating-linear-gradient(90deg, rgba(170,190,255,0.08) 0px, rgba(170,190,255,0.08) 1px, transparent 1px, transparent 58px)";
+
+  // Jeden, responsywny układ (mobile + desktop). Kolejność z góry na dół:
+  // nagłówek → kafelek CTA „Zamów bezpłatną wycenę" → na samym dole rakieta (lewy dolny róg,
+  // dotyka krawędzi) z szarymi napisami stopki obok, po jej prawej.
+  return (
+    <section style={{
+      position: "relative", overflow: "hidden",
+      backgroundColor: "var(--navy-900)", backgroundImage: bgImage,
+      padding: "var(--section-pad-y) 5% 0",   // padding-bottom: 0 → rakieta dotyka dolnej krawędzi
+    }}>
+      {/* Dekoracja: spadające bańki + niskie chmury (z dala od tytułu) */}
+      <div aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", overflow: "hidden" }}>
+        {makeBubbles(isMobile ? 12 : 16).map((b, i) => <InteractiveBubble key={i} b={b} accent={FINAL_ACCENT} />)}
+      </div>
+      <Cloud src="../../assets/images/chmury/CHMURA-2.png" style={{ bottom: "16%", right: "-5%", width: 420, opacity: 0.55, zIndex: 1, animationDelay: "-5s" }} />
+      <Cloud src="../../assets/images/chmury/CHMURA-3.png" style={{ top: "46%", left: "4%", width: 240, opacity: 0.3, zIndex: 1, animationDelay: "-8s" }} />
+
+      <div style={{ position: "relative", zIndex: 3, maxWidth: "var(--container-max)", margin: "0 auto", display: "flex", flexDirection: "column", gap: isMobile ? 28 : 44 }}>
+
+        {/* 1. Nagłówek sekcji */}
+        <div style={{ textAlign: "center" }}>
+          <div style={{ position: "relative", display: "inline-block", maxWidth: "100%" }}>
+            <SectionWatermark text="Start" style={{ fontSize: "clamp(4rem, 9vw, 8rem)" }} />
+            <h2 className="display-bold" style={{ position: "relative", zIndex: 1, fontWeight: 800, color: "#fff", margin: "0 0 14px", lineHeight: 1.08 }}>
+              {t("Wznosimy czystość na ", "We take cleanliness to a ")}<span className="bc-flow-text">{t("wyższy poziom", "higher level")}</span>
+            </h2>
+          </div>
+          <p style={{ fontSize: "var(--text-medium)", color: "rgba(255,255,255,0.82)", margin: "0 auto", maxWidth: 540, lineHeight: 1.6 }}>
+            {t("Jeden telefon i Twoje hale, posadzki oraz elewacje startują po nowy blask.", "One call and your halls, floors and façades take off toward a fresh shine.")}
+          </p>
+        </div>
+
+        {/* 2. Kafelek CTA „Zamów bezpłatną wycenę" */}
+        <div style={{ width: "100%", maxWidth: 820, margin: "0 auto" }}>
+          <div
+            className="bc-flow-border bc-glass-shine"
+            onMouseEnter={() => setCtaHover(true)}
+            onMouseLeave={() => setCtaHover(false)}
+            style={{
+              display: "flex", alignItems: "center", gap: 28, flexWrap: "wrap",
+              padding: "22px 30px", borderRadius: 20,
+              background: ctaHover
+                ? "linear-gradient(150deg, rgba(34,48,104,0.92) 0%, rgba(16,24,66,0.94) 100%)"
+                : "linear-gradient(150deg, rgba(20,30,72,0.82) 0%, rgba(10,16,46,0.88) 100%)",
+              border: `1px solid ${ctaHover ? "rgba(143,168,255,0.85)" : "rgba(143,168,255,0.4)"}`,
+              transform: ctaHover && !isMobile ? "translateY(-6px)" : "none",
+              boxShadow: ctaHover
+                ? "0 34px 80px rgba(2,6,24,0.6), 0 0 60px rgba(143,168,255,0.6)"
+                : "0 24px 60px rgba(2,6,24,0.55)",
+              transition: "transform .3s ease, box-shadow .3s ease, background .3s ease, border-color .3s ease",
+            }}>
+            <div style={{ flex: "1 1 260px", minWidth: 0 }}>
+              <h3 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: "clamp(1.6rem, 2.5vw, 2.2rem)", color: "#fff", margin: "0 0 8px", letterSpacing: "-0.01em", lineHeight: 1.1 }}>
+                {t("Zamów bezpłatną ", "Get a free ")}<span className="bc-flow-text">{t("wycenę", "quote")}</span>
+              </h3>
+              <p style={{ fontSize: "var(--text-medium)", color: "rgba(255,255,255,0.78)", margin: 0 }}>
+                {t("Kosztorys w 24 godziny, bez zobowiązań.", "A cost estimate within 24 hours, no obligations.")}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onQuote}
+              onMouseEnter={() => setCtaBtnHover(true)}
+              onMouseLeave={() => setCtaBtnHover(false)}
+              style={{
+                flex: "0 0 auto",
+                display: "inline-flex", alignItems: "center", gap: 10,
+                fontFamily: "var(--font-body)", fontWeight: 600, fontSize: "var(--text-regular)",
+                color: "#fff", cursor: "pointer",
+                padding: "11px 22px", borderRadius: "var(--radius-button)",
+                background: ctaBtnHover ? "rgba(143,168,255,0.16)" : "transparent",
+                border: `1.5px solid ${ctaBtnHover ? "rgba(143,168,255,0.95)" : "rgba(143,168,255,0.6)"}`,
+                boxShadow: ctaBtnHover ? "0 0 22px rgba(143,168,255,0.6)" : "none",
+                transition: "background .25s ease, border-color .25s ease, box-shadow .25s ease",
+              }}
+            >
+              {t("Zamów wycenę", "Get a quote")}
+              <HeroArrow hover={ctaBtnHover} gid="bc-rocket-cta-arrow" />
+            </button>
+          </div>
+        </div>
+
+        {/* 3. Dolny rząd: rakieta w lewym dolnym rogu (dotyka krawędzi) + szare napisy stopki po prawej */}
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: isMobile ? 14 : 32 }}>
+          <img src="../../assets/images/stopka-clean.png" alt="" aria-hidden="true"
+            style={{ display: "block", flex: "0 0 auto", width: isMobile ? "46%" : "38%", maxWidth: 520, height: "auto", pointerEvents: "none", userSelect: "none" }} />
+          <footer style={{
+            flex: "1 1 0", minWidth: 0, alignSelf: "flex-end", paddingBottom: isMobile ? 18 : 30,
+            display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, textAlign: "right",
+            fontSize: "var(--text-tiny)", color: "rgba(255,255,255,0.62)",
+          }}>
+            <span>© 2026 Basko Clean · {t("Działamy na terenie całej Polski", "Operating across Poland")}</span>
+            <a href="polityka-prywatnosci.html" target="_blank" rel="noopener" className="bc-foot-link" style={{ color: "inherit", textDecoration: "none" }}>{t("Polityka prywatności", "Privacy policy")}</a>
+          </footer>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── FAQ — akordeon (klik rozwija odpowiedź) ──────────────────────────────────
+const FAQ_ITEMS = [
+  { q: "Czy wystawiacie fakturę VAT?", qEn: "Do you issue VAT invoices?",
+    a: "Tak. Jesteśmy zarejestrowaną firmą i każde zlecenie rozliczamy fakturą VAT.",
+    aEn: "Yes. We're a registered company and settle every job with a VAT invoice." },
+  { q: "Na jakim obszarze działacie?", qEn: "What area do you cover?",
+    a: "Działamy na terenie całej Polski.",
+    aEn: "We operate across all of Poland." },
+  { q: "Czy wycena jest darmowa i ile trwa?", qEn: "Is the quote free and how long does it take?",
+    a: "Tak, wycena jest bezpłatna. Odpowiadamy do 24 h, a w razie potrzeby przyjeżdżamy na obiekt.",
+    aEn: "Yes, the quote is free. We reply within 24 h and, if needed, visit the site." },
+  { q: "W jakim czasie realizujecie zlecenie?", qEn: "How quickly do you carry out a job?",
+    a: "Zwykle wchodzimy na obiekt do 7 dni od dopięcia zlecenia.",
+    aEn: "We usually start on site within 7 days of finalizing the job." },
+  { q: "Jakiej chemii i sprzętu używacie?", qEn: "What chemicals and equipment do you use?",
+    a: "Pracujemy na profesjonalnej chemii Ecolab, Kleen i Buzil, własnym sprzętem.",
+    aEn: "We work with professional Ecolab, Kleen and Buzil chemicals, using our own equipment." },
+  { q: "Czy macie ubezpieczenie OC?", qEn: "Do you have liability insurance?",
+    a: "Tak, posiadamy ubezpieczenie OC.",
+    aEn: "Yes, we carry liability (OC) insurance." },
+  { q: "Czy pracujecie w weekendy?", qEn: "Do you work on weekends?",
+    a: "Tak. Dopasowujemy się do Twoich godzin pracy — również w weekendy.",
+    aEn: "Yes. We adapt to your working hours — weekends included." },
+  { q: "Czy podpisujecie stałe umowy na utrzymanie?", qEn: "Do you sign ongoing maintenance contracts?",
+    a: "Tak. Oferujemy stałe umowy utrzymania (abonament miesięczny) — niższa stawka i stała dyspozycyjność.",
+    aEn: "Yes. We offer ongoing maintenance contracts (a monthly subscription) — a lower rate and constant availability." },
+];
+
+function FAQItem({ item, open, onToggle }) {
+  const { t } = useLang();
+  return (
+    <div className="bc-glass-shine bc-flow-border" style={{
+      borderRadius: 14, overflow: "hidden",
+      background: open ? "rgba(143,168,255,0.10)" : "rgba(255,255,255,0.04)",
+      boxShadow: open
+        ? "0 14px 38px rgba(5,10,40,0.4), 0 0 30px rgba(143,168,255,0.25)"
+        : "0 8px 24px rgba(5,10,40,0.25)",
+      transition: "background .3s ease, box-shadow .3s ease",
+    }}>
+      <button type="button" onClick={onToggle} aria-expanded={open}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+          padding: "18px 22px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left",
+        }}>
+        <span style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: "var(--text-medium)", color: "#fff", lineHeight: 1.3 }}>
+          {t(item.q, item.qEn)}
+        </span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+          style={{ flexShrink: 0, transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform .3s ease",
+            filter: "drop-shadow(0 0 6px rgba(143,168,255,0.6))" }}>
+          <path d="M6 9l6 6 6-6" stroke={FINAL_ACCENT} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {/* animowane rozwijanie (grid-rows 0fr→1fr) */}
+      <div style={{ display: "grid", gridTemplateRows: open ? "1fr" : "0fr", transition: "grid-template-rows .32s cubic-bezier(.4,0,.2,1)" }}>
+        <div style={{ overflow: "hidden" }}>
+          <p style={{ margin: 0, padding: "0 22px 20px", fontSize: "var(--text-small)", color: "rgba(255,255,255,0.74)", lineHeight: 1.6 }}>
+            {t(item.a, item.aEn)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FAQ() {
+  const { t } = useLang();
+  const [open, setOpen] = useState(null);
+  return (
+    <section id="faq" style={{ padding: "var(--section-pad-y) 5%", background: "transparent", position: "relative", overflow: "hidden", scrollMarginTop: 80 }}>
+      <div aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
+        {makeBubbles(12).map((b, i) => <InteractiveBubble key={i} b={b} accent={FINAL_ACCENT} />)}
+      </div>
+      <div style={{ maxWidth: 760, margin: "0 auto", position: "relative", zIndex: 1 }}>
+        <div style={{ textAlign: "center", marginBottom: 44 }}>
+          <div style={{ position: "relative", display: "inline-block", maxWidth: "100%" }}>
+            <SectionWatermark text="FAQ" />
+            <h2 className="display-bold" style={{ position: "relative", zIndex: 1, fontWeight: 800, color: "#fff", margin: 0, lineHeight: 1.08 }}>
+              {t("Najczęstsze ", "Frequently asked ")}<span className="bc-flow-text">{t("pytania", "questions")}</span>
+            </h2>
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {FAQ_ITEMS.map((item, i) => (
+            <FAQItem key={i} item={item} open={open === i} onToggle={() => setOpen(open === i ? null : i)} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function BCConsentGate() {
+  const [ok, setOk] = useState(() => {
+    try { return localStorage.getItem("bc_consent") === "1"; } catch (e) { return false; }
+  });
+  if (ok) return null;
+  const accept = () => {
+    try { localStorage.setItem("bc_consent", "1"); } catch (e) {}
+    setOk(true);
+  };
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 100000,
+      background: "rgba(4,8,24,0.80)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+    }}>
+      <div style={{
+        width: 460, maxWidth: "100%", borderRadius: 22, padding: "34px 30px",
+        background: "linear-gradient(150deg, #1a285c 0%, #0d1540 100%)",
+        border: "1px solid rgba(143,168,255,0.45)", boxShadow: "0 40px 90px rgba(2,6,24,0.7)",
+        textAlign: "center", color: "#fff", fontFamily: "var(--font-body)",
+      }}>
+        <div style={{
+          width: 54, height: 54, margin: "0 auto 16px", borderRadius: "50%",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "rgba(143,168,255,0.15)", border: "1px solid rgba(143,168,255,0.5)", fontSize: 26,
+        }}>🔒</div>
+        <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: "1.45rem", margin: "0 0 12px" }}>
+          Zanim przejdziesz dalej
+        </h2>
+        <p style={{ fontSize: "0.98rem", lineHeight: 1.6, color: "rgba(255,255,255,0.82)", margin: "0 0 22px" }}>
+          Ta strona przetwarza dane z formularza kontaktowego zgodnie z naszą{" "}
+          <a href="polityka-prywatnosci.html" target="_blank" rel="noopener"
+            style={{ color: "#8fa8ff", textDecoration: "underline" }}>Polityką prywatności</a>.
+          Aby korzystać ze strony, zaakceptuj jej postanowienia.
+        </p>
+        <button onClick={accept} style={{
+          width: "100%", padding: "14px 20px", borderRadius: 12, border: "none", cursor: "pointer",
+          fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: "1rem", color: "#0d1540",
+          background: "linear-gradient(140deg, #cdd9ff 0%, #8fa8ff 100%)",
+          boxShadow: "0 10px 30px rgba(143,168,255,0.4)",
+        }}>
+          Akceptuję i wchodzę
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [quote, setQuote] = useState(false);
+  const open = () => {
+    const el = document.getElementById("wycena");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+  window.bcOpenQuote = open;
+  return (
+    <BCLangProvider>
+      <BCConsentGate />
+      <Navbar onQuote={open} />
+      <Hero onQuote={open} />
+      <HowItWorks onQuote={open} />
+      <Oferta onQuote={open} />
+      <OFirmie />
+      <KlienciIntro />
+      <TrustBar />
+      <Galeria />
+      <FAQ />
+      <Podsumowanie />
+      <RocketFinal onQuote={open} />
+      {quote && <QuoteModal onClose={() => setQuote(false)} />}
+    </BCLangProvider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+<script>
+// Scroll fade-in via IntersectionObserver
+setTimeout(function() {
+  var sections = document.querySelectorAll('section');
+  if (!sections.length) return;
+
+  sections.forEach(function(s, i) { if (i > 0) s.classList.add('bc-fade'); });
+
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('bc-visible');
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  sections.forEach(function(s) { obs.observe(s); });
+}, 300);
+</script>
+</body>
+</html>
